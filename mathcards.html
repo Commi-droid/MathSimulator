@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Дидактические карточки – тренажёр</title>
+<style>
+:root {
+  --c2: #EF4444; --c3: #3B82F6; --c5: #F59E0B; --c7: #10B981; --cx: #8B5CF6;
+  --teal: #14B8A6; --indigo: #6366F1;
+  --ink: #0F172A; --muted: #64748B; --bg: #EEF2F7; --panel: #FFFFFF;
+  --accent: #6366F1; --ok: #16A34A; --err: #DC2626;
+  --base: clamp(48px, 8.5vh, 100px);
+  --card: var(--base);
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: radial-gradient(circle at 10% 0%, #E0E7FF 0, transparent 40%),
+              radial-gradient(circle at 100% 100%, #CCFBF1 0, transparent 40%), var(--bg);
+  color: var(--ink); overflow: hidden; user-select: none;
+}
+.app { height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+
+header.top {
+  display: flex; align-items: center; gap: 16px; padding: 8px 20px;
+  background: #fff; box-shadow: 0 2px 14px rgba(15, 23, 42, .08); z-index: 5;
+}
+.brand { font-weight: 800; font-size: 16px; line-height: 1.15; color: var(--muted); white-space: nowrap; }
+nav.tabs { display: flex; gap: 8px; flex: 1; }
+.tab {
+  flex: 1; border: 0; background: #F1F5F9; border-radius: 14px; padding: 6px 14px;
+  text-align: left; cursor: pointer; font: inherit; color: var(--ink); transition: background .2s, color .2s;
+}
+.tab small { display: block; font-size: 13px; font-weight: 600; color: var(--muted); }
+.tab b { font-size: clamp(15px, 1.3vw, 21px); }
+.tab:hover { background: #E2E8F0; }
+.tab.active { background: var(--ink); color: #fff; }
+.tab.active small { color: #CBD5E1; }
+
+main { min-height: 0; position: relative; }
+.module { position: absolute; inset: 0; display: none; grid-template-rows: auto auto 1fr auto; gap: 10px; padding: 10px 24px 14px; }
+.module.active { display: grid; }
+.mod-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mod-title { flex: 1; min-width: 320px; }
+.mod-title h1 { margin: 0; font-size: clamp(21px, 2vw, 32px); }
+.mod-title p { margin: 0; font-size: clamp(15px, 1.2vw, 20px); color: var(--muted); }
+.btn {
+  font: inherit; font-size: clamp(15px, 1.2vw, 20px); font-weight: 700; border: 0; border-radius: 14px;
+  padding: 10px 18px; cursor: pointer; box-shadow: 0 4px 0 rgba(0, 0, 0, .18);
+  transition: transform .12s, box-shadow .12s, opacity .2s;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .18); }
+.btn:disabled { opacity: .4; cursor: default; transform: none; }
+.btn-reset { background: #FEE2E2; color: #B91C1C; }
+.btn-step { background: var(--accent); color: #fff; }
+.btn-tool { background: #0F766E; color: #fff; }
+.btn-go { background: var(--ink); color: #fff; }
+.btn.attn { animation: attn 1s ease-in-out 2; }
+@keyframes attn { 50% { box-shadow: 0 4px 0 rgba(0,0,0,.18), 0 0 0 10px rgba(20, 184, 166, .35); } }
+.seg { display: flex; background: #E2E8F0; border-radius: 14px; padding: 4px; }
+.seg button {
+  font: inherit; font-size: clamp(15px, 1.2vw, 20px); font-weight: 700; border: 0; background: transparent;
+  color: var(--muted); padding: 7px 14px; border-radius: 11px; cursor: pointer; transition: background .2s, color .2s;
+}
+.seg button.on { background: #fff; color: var(--ink); box-shadow: 0 2px 8px rgba(15, 23, 42, .15); }
+.seg i { font-family: "Cambria Math", Cambria, "Times New Roman", serif; }
+
+.ctrl {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 14px;
+  background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15, 23, 42, .06);
+}
+.fld { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); font-size: clamp(15px, 1.2vw, 20px); }
+.inp {
+  font: inherit; font-size: clamp(18px, 1.5vw, 26px); font-weight: 800; color: var(--ink);
+  width: 4.2em; padding: 4px 10px; border: 3px solid #CBD5E1; border-radius: 12px; text-align: center;
+  outline: none; user-select: text; background: #fff; transition: border-color .2s, background .2s;
+}
+.inp:focus { border-color: var(--accent); }
+.inp.invalid { border-color: var(--err); background: #FEF2F2; }
+.sel { width: auto; text-align: left; font-size: clamp(15px, 1.2vw, 20px); font-weight: 700; cursor: pointer; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chips-l { font-weight: 700; color: var(--muted); font-size: clamp(14px, 1.1vw, 18px); }
+.chip {
+  font: inherit; font-weight: 700; font-size: clamp(14px, 1.1vw, 18px); border: 2px solid #C7D2FE; background: #EEF2FF;
+  color: #3730A3; border-radius: 999px; padding: 4px 12px; cursor: pointer; transition: background .2s;
+}
+.chip:hover { background: #E0E7FF; }
+.ctrl-msg { flex-basis: 100%; color: var(--err); font-weight: 700; font-size: clamp(14px, 1.1vw, 18px); }
+.ctrl-msg:empty { display: none; }
+
+.stage {
+  --card: var(--fit, var(--base));
+  min-height: 0; background: var(--panel); border-radius: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, .08);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; padding: 2vh 2vw;
+}
+.result {
+  min-height: 60px; display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 8px 20px; border-radius: 18px; background: #fff; box-shadow: 0 4px 16px rgba(15, 23, 42, .06);
+  font-size: clamp(20px, 2.1vw, 34px); font-weight: 800;
+}
+.result.hint { font-size: clamp(16px, 1.4vw, 23px); font-weight: 600; color: var(--muted); }
+.result.done { background: #F0FDF4; box-shadow: 0 0 0 3px #86EFAC; animation: popIn .5s ease-out; }
+.result.warn { background: #FFFBEB; box-shadow: 0 0 0 3px #FCD34D; color: #92400E; font-size: clamp(18px, 1.7vw, 28px); }
+@keyframes popIn { from { transform: scale(.94); opacity: 0; } }
+.t2 { color: var(--c2); } .t3 { color: var(--c3); } .t5 { color: #D97706; } .t7 { color: var(--c7); } .tX { color: #7C3AED; }
+.cond { font-weight: 600; color: var(--muted); font-size: .7em; }
+
+/* ---------- Карточки ---------- */
+.card {
+  position: relative; flex: none; width: var(--card); height: calc(var(--card) * 1.15);
+  border-radius: 16px; display: grid; place-items: center;
+  font-weight: 800; font-size: calc(var(--card) * .48); color: #fff; line-height: 1;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .2), 0 12px 22px rgba(15, 23, 42, .18), inset 0 3px 0 rgba(255, 255, 255, .3);
+  cursor: grab; touch-action: none;
+  transition: translate .2s, scale .2s, box-shadow .2s, filter .2s, opacity .3s;
+}
+/* «шип» конструктора */
+.card::after {
+  content: ''; position: absolute; top: -9px; left: 50%; width: 42%; height: 11px; transform: translateX(-50%);
+  background: inherit; border-radius: 8px 8px 0 0; box-shadow: inset 0 3px 0 rgba(255, 255, 255, .3);
+}
+.card:hover { translate: 0 -4px; filter: brightness(1.06); }
+.card.selected { translate: 0 -14px; scale: 1.06; box-shadow: 0 0 0 4px #fff, 0 0 0 9px #FACC15, 0 18px 30px rgba(0, 0, 0, .25); }
+.card.glow { box-shadow: 0 0 0 4px #fff, 0 0 0 9px #FACC15, 0 0 30px 10px rgba(250, 204, 21, .6); }
+.card.added { box-shadow: 0 0 0 4px #fff, 0 0 0 8px #FACC15, 0 12px 22px rgba(15, 23, 42, .18); }
+.card.faded { opacity: .35; }
+.card.leftover { animation: leftover 1.4s ease-in-out infinite; }
+@keyframes leftover { 50% { box-shadow: 0 0 0 4px #fff, 0 0 0 9px #FDE047, 0 12px 22px rgba(15, 23, 42, .18); } }
+.dragging { z-index: 50; cursor: grabbing; transition: none; box-shadow: 0 24px 40px rgba(15, 23, 42, .35); }
+.drop-hover { outline: 4px dashed var(--accent); outline-offset: 6px; }
+
+.p2 { background: var(--c2); } .p3 { background: var(--c3); }
+.p5 { background: var(--c5); color: #1F2937; } .p7 { background: var(--c7); }
+/* универсальная «маркерная» карточка для простых чисел ≥ 11 */
+.pX {
+  background: var(--cx);
+  box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 6px rgba(0, 0, 0, .12), 0 6px 0 rgba(0, 0, 0, .2), 0 12px 22px rgba(15, 23, 42, .18);
+}
+.prime.mid { font-size: calc(var(--card) * .42); }
+.prime.long { font-size: calc(var(--card) * .32); }
+
+.composite { width: calc(var(--card) * 1.6); cursor: default; }
+.composite::after { display: none; }
+.composite:hover { translate: none; }
+.composite.wide { cursor: pointer; }
+.composite.wide:hover { translate: 0 -4px; }
+.composite .num {
+  background: rgba(255, 255, 255, .94); color: var(--ink); border-radius: 12px; padding: .08em .22em;
+  font-size: calc(var(--card) * .44); box-shadow: 0 2px 6px rgba(0, 0, 0, .2);
+}
+
+.chain { display: flex; align-items: center; justify-content: center; gap: calc(var(--card) * .42); min-height: calc(var(--card) * 1.15); }
+.chain > * { position: relative; }
+.chain > * + *::before {
+  content: '·'; position: absolute; top: 0; bottom: 0; left: calc(var(--card) * -.42); width: calc(var(--card) * .42);
+  display: flex; align-items: center; justify-content: center;
+  font: 900 calc(var(--card) * .8)/1 "Segoe UI", Arial, sans-serif; font-style: normal; color: var(--ink); pointer-events: none;
+}
+.chain > .dragging::before { opacity: 0; }
+
+.nrow { display: flex; align-items: center; gap: calc(var(--card) * .35); }
+.numbox { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tag { font-size: clamp(13px, 1vw, 16px); font-weight: 700; color: #6D28D9; background: #F5F3FF; border-radius: 999px; padding: 2px 10px; }
+.eq { font-size: calc(var(--card) * .6); font-weight: 800; color: var(--muted); }
+.slot { width: var(--card); height: calc(var(--card) * 1.15); border-radius: 16px; }
+.slot:empty { border: 3px dashed #CBD5E1; background: #F8FAFC; }
+.zone {
+  display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: calc(var(--card) * 6.5);
+  padding: 10px 28px 18px; border: 3px dashed #A5B4FC; background: #EEF2FF; border-radius: 22px;
+}
+.zone-label { font-weight: 700; color: #4338CA; font-size: clamp(15px, 1.2vw, 21px); text-align: center; }
+.pair { width: var(--card); height: calc(var(--card) * 1.15); isolation: isolate; }
+.pair > .card:nth-child(2) { position: absolute; left: 12px; top: 12px; z-index: -1; filter: brightness(.88); }
+
+.pow-row { display: flex; align-items: center; justify-content: center; gap: 1.6vw; }
+.blocks { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.floors { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.fbar { align-self: stretch; min-width: calc(var(--card) * 3); height: 8px; border-radius: 4px; background: var(--ink); }
+.pcard { font-family: "Cambria Math", Cambria, "Times New Roman", serif; font-style: italic; font-weight: 700; }
+.pcard sup { font-size: .5em; font-style: normal; margin-left: .04em; vertical-align: .9em; }
+.pcard.big { width: calc(var(--card) * 1.5); height: calc(var(--card) * 1.5); font-size: calc(var(--card) * .74); border-radius: 22px; }
+.pcard.wide-p { width: auto; padding: 0 .4em; }
+.pcard.one { background: #475569; font-style: normal; }
+.teal { background: var(--teal); } .indigo { background: var(--indigo); }
+.orange { background: #F97316; } .pink { background: #EC4899; } .sky { background: #0EA5E9; }
+.grad { background: linear-gradient(135deg, var(--teal), var(--indigo)); }
+.group {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 16px 10px; border-radius: 24px; border: 3px dashed transparent; touch-action: none; cursor: pointer;
+}
+.group.open { cursor: grab; background: #F8FAFC; border-color: #CBD5E1; }
+.teal-g.open { background: #F0FDFA; border-color: #5EEAD4; }
+.indigo-g.open { background: #EEF2FF; border-color: #A5B4FC; }
+.cap { font-size: clamp(14px, 1.25vw, 22px); font-weight: 700; color: var(--muted); text-align: center; }
+.cap i { font-family: "Cambria Math", Cambria, "Times New Roman", serif; }
+.mul { font-size: calc(var(--card) * .9); font-weight: 900; }
+.badge {
+  position: absolute; top: calc(var(--card) * -.62); left: 50%; transform: translateX(-50%);
+  width: calc(var(--card) * .44); height: calc(var(--card) * .44); border-radius: 50%; display: grid; place-items: center;
+  background: var(--ink); color: #fff; font: 700 calc(var(--card) * .24)/1 "Segoe UI", Arial, sans-serif;
+}
+.formula { font-family: "Cambria Math", Cambria, "Times New Roman", serif; font-size: clamp(26px, 3vw, 48px); font-weight: 700; min-height: 1.4em; text-align: center; white-space: nowrap; }
+.formula i, .result i, .fsu i, .mono i, .bcard i { font-family: "Cambria Math", Cambria, "Times New Roman", serif; }
+
+.rad { display: inline-flex; align-items: stretch; vertical-align: middle; --w: 4px; --rc: #1E293B; }
+.rs-wrap { position: relative; flex: none; width: .55em; }
+.rs-wrap svg {
+  position: absolute; left: 0; top: calc(var(--w) / 2); width: 100%; height: calc(100% - var(--w) / 2); overflow: visible;
+}
+.rs-wrap path { fill: none; stroke: var(--rc); stroke-width: var(--w); stroke-linejoin: round; stroke-linecap: butt; }
+.rad-body { margin-left: -1px; border-top: var(--w) solid var(--rc); padding: 12px 20px; }
+.rad.sm { --w: 3px; }
+.rad.sm .rs-wrap { width: .5em; }
+.rad.sm .rad-body { padding: .06em .12em 0; }
+.rad.big { --w: 6px; }
+.rad.big .rs-wrap { width: calc(var(--card) * .6); }
+.rad.big .rad-body {
+  display: flex; align-items: center; justify-content: center; min-width: calc(var(--card) * 2.6);
+  padding: calc(var(--card) * .34) 24px calc(var(--card) * .26);
+}
+
+.rule { background: #FEF3C7; color: #92400E; font-weight: 700; border-radius: 14px; padding: 6px 20px; font-size: clamp(17px, 1.5vw, 25px); }
+.root-row { display: flex; align-items: center; gap: 2vw; }
+.outside {
+  min-width: calc(var(--card) * 2.8); min-height: calc(var(--card) * 2); padding: 10px 18px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  border: 3px dashed #FCD34D; background: #FFFBEB; border-radius: 22px;
+}
+.outside .zone-label { color: #B45309; }
+
+.frac-row { display: flex; align-items: center; gap: 4vw; }
+.frac { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.fl-num, .fl-den { min-height: calc(var(--card) * 1.3); display: flex; align-items: center; justify-content: center; }
+.frac .bar { align-self: stretch; min-width: calc(var(--card) * 4.6); height: 8px; border-radius: 4px; background: var(--ink); }
+.mono {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  border: 3px solid #64748B; background: #F1F5F9; border-radius: 12px; padding: 14px 28px;
+  box-shadow: 0 6px 0 #94A3B8, 0 14px 26px rgba(15, 23, 42, .18); cursor: pointer; touch-action: none;
+  transition: border-color .25s, background .25s, box-shadow .25s;
+}
+.mono-expr {
+  display: flex; align-items: baseline; gap: .3em; color: var(--ink); line-height: 1.1;
+  font-family: "Cambria Math", Cambria, "Times New Roman", serif; font-weight: 700; font-size: calc(var(--card) * .62);
+}
+.mono-expr .term { padding: 0 .1em; border-radius: 8px; transition: background .2s; }
+.mono-expr .term:hover { background: #E2E8F0; }
+.mono-expr .op { color: #334155; }
+.weld {
+  display: flex; align-items: center; gap: 8px; align-self: stretch;
+  font: 700 clamp(12px, .95vw, 16px)/1 "Segoe UI", Arial, sans-serif; color: #475569; white-space: nowrap;
+}
+.weld::before, .weld::after {
+  content: ''; flex: 1; height: 6px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #64748B 0 10px, #94A3B8 10px 14px);
+}
+.weld svg { flex: none; }
+.mono.error { border-color: var(--err); background: #FEE2E2; box-shadow: 0 6px 0 #B91C1C, 0 0 0 10px rgba(239, 68, 68, .2); }
+.crack { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.crack path { fill: none; stroke: #0F172A; stroke-width: 5; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; }
+.bcard {
+  width: auto; height: calc(var(--card) * 1.05); padding: 0 .45em; border: 4px solid; border-radius: 18px;
+  color: var(--ink); font-family: "Cambria Math", Cambria, "Times New Roman", serif; font-weight: 700;
+  font-size: calc(var(--card) * .52); white-space: nowrap;
+}
+.bcard::after { display: none; }
+.bcard.plus { border-color: #F97316; background: #FFF7ED; }
+.bcard.minus { border-color: #0D9488; background: #F0FDFA; }
+.bcard.kcoef { border-color: #7C3AED; background: #F5F3FF; min-width: calc(var(--card) * 1); }
+.strike {
+  position: absolute; left: -8%; right: -8%; top: 50%; height: 7px; margin-top: -3px; border-radius: 4px;
+  background: var(--err); transform: rotate(-14deg) scaleX(0); transform-origin: left center; transition: transform .45s ease-out;
+}
+.struck .strike { transform: rotate(-14deg) scaleX(1); }
+.tools { display: flex; flex-direction: column; gap: 12px; }
+.tool {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 20px;
+  border-radius: 20px; background: #F0FDFA; border: 3px solid #99F6E4;
+}
+.tool .cap { color: #0F766E; }
+.fsu { font-family: "Cambria Math", Cambria, "Times New Roman", serif; font-size: clamp(18px, 1.6vw, 28px); }
+.fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: .8em; margin: 0 .15em; }
+.fr > span + span { border-top: 3px solid currentColor; padding-top: .05em; }
+
+#toast {
+  position: fixed; left: 50%; bottom: 4vh; z-index: 100; max-width: min(92vw, 1100px);
+  transform: translate(-50%, 30px); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s;
+  padding: 14px 28px; border-radius: 18px; text-align: center; color: #fff; background: var(--ink);
+  font-size: clamp(18px, 1.6vw, 27px); font-weight: 700; box-shadow: 0 16px 40px rgba(15, 23, 42, .35);
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+#toast.err { background: var(--err); }
+#toast.ok { background: var(--ok); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand" title="Клавиши: → или PageDown — следующий шаг, R — сброс, 1–4 — вкладки">Дидактические<br>карточки</div>
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+  <main>
+    <section class="module" id="m1"></section>
+    <section class="module" id="m2"></section>
+    <section class="module" id="m3"></section>
+    <section class="module" id="m4"></section>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+const COLORS = { 2: '#EF4444', 3: '#3B82F6', 5: '#F59E0B', 7: '#10B981' };
+const PURPLE = '#8B5CF6'; // любое простое ≥ 11
+const colorOf = p => COLORS[p] || PURPLE;
+
+function getPrimeFactors(n) {
+  const f = [];
+  for (let p = 2; p * p <= n; p++) while (n % p === 0) { f.push(p); n /= p; }
+  if (n > 1) f.push(n);
+  return f;
+}
+const count = (arr, v) => arr.filter(x => x === v).length;
+const prod = arr => arr.reduce((a, b) => a * b, 1);
+function intersect(a, b) {
+  const rest = [...b], r = [];
+  for (const x of a) { const i = rest.indexOf(x); if (i >= 0) { r.push(x); rest.splice(i, 1); } }
+  return r;
+}
+function union(a, b) {
+  const rest = [...a], r = [...a];
+  for (const x of b) { const i = rest.indexOf(x); if (i >= 0) rest.splice(i, 1); else r.push(x); }
+  return r;
+}
+
+const NOUN = { // [им. ед., род. ед., им. мн.]
+  2: ['двойка', 'двойки', 'двойки'], 3: ['тройка', 'тройки', 'тройки'],
+  5: ['пятёрка', 'пятёрки', 'пятёрки'], 7: ['семёрка', 'семёрки', 'семёрки'],
+};
+const COUNT = ['', 'Одна', 'Две', 'Три', 'Четыре'];
+function plural(n, [one, few, many]) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const mn = n => `${n} ${plural(n, ['множитель', 'множителя', 'множителей'])}`;
+const col = v => `<span class="${COLORS[v] ? 't' + v : 'tX'}">${v}</span>`;
+const P = exp => `<i>a</i><sup>${exp}</sup>`;
+const frac = (top, bottom) => `<span class="fr"><span>${top}</span><span>${bottom}</span></span>`;
+
+const RAD_SVG = '<svg viewBox="0 0 32 100" preserveAspectRatio="none"><path vector-effect="non-scaling-stroke" d="M1 60 L8 53 L17 97 L27 0 L32 0"/></svg>';
+const radHTML = x => `<span class="rad sm"><span class="rs-wrap">${RAD_SVG}</span><span class="rad-body">${x}</span></span>`;
+const LOCK_SVG = '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="5" y="11" width="14" height="10" rx="2" fill="#475569"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#475569" stroke-width="2.5"/></svg>';
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') el.className = v;
+    else if (k === 'html') el.innerHTML = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null) el.append(kid instanceof Node ? kid : String(kid));
+  return el;
+}
+function fromHTML(html) {
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
+const center = r => [r.left + r.width / 2, r.top + r.height / 2];
+
+function numField(label, value, onEnter) {
+  const input = h('input', { class: 'inp', type: 'text', inputmode: 'numeric', autocomplete: 'off', value });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') onEnter(); });
+  input.addEventListener('input', () => input.classList.remove('invalid'));
+  return { input, el: h('label', { class: 'fld' }, label, input) };
+}
+function readInt(input) {
+  const s = input.value.trim().replace(',', '.');
+  if (!/^[-+]?\d+(\.\d+)?$/.test(s)) return { bad: 'nan' };
+  const v = Number(s);
+  if (v < 0) return { bad: 'neg', v };
+  if (!Number.isInteger(v)) return { bad: 'frac', v };
+  return { v };
+}
+const chips = (list) => h('div', { class: 'chips' }, h('span', { class: 'chips-l' }, 'Примеры:'),
+  list.map(([text, fn]) => h('button', { class: 'chip', onclick: fn }, text)));
+
+
+const anim = (el, kf, opt) => el.animate(kf, opt).finished.catch(() => {});
+const shake = el => anim(el, [
+  { transform: 'translateX(0)' }, { transform: 'translateX(-14px) rotate(-3deg)' },
+  { transform: 'translateX(12px) rotate(3deg)' }, { transform: 'translateX(-8px) rotate(-1deg)' },
+  { transform: 'translateX(6px)' }, { transform: 'translateX(0)' },
+], { duration: 480, easing: 'ease-out' });
+const pulse = el => anim(el, [{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-in-out' });
+const pop = el => anim(el, [
+  { transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.12)', opacity: 1, offset: .7 }, { transform: 'scale(1)' },
+], { duration: 480, easing: 'ease-out' });
+const fadeOut = (el, extra = 'none') => anim(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: extra }], { duration: 450, fill: 'forwards' });
+
+function emerge(els, [cx, cy], { duration = 600, stagger = 80, from = 'scale(.3)' } = {}) {
+  return Promise.all(els.map((el, i) => {
+    const [x, y] = center(el.getBoundingClientRect());
+    return anim(el, [
+      { transform: `translate(${cx - x}px, ${cy - y}px) ${from}`, opacity: 0 },
+      { transform: 'none', opacity: 1 },
+    ], { duration, delay: i * stagger, easing: 'cubic-bezier(.2,.9,.3,1.25)', fill: 'backwards' });
+  }));
+}
+
+function implode(els, [cx, cy], { duration = 550, stagger = 40 } = {}) {
+  return Promise.all(els.map((el, i) => {
+    const [x, y] = center(el.getBoundingClientRect());
+    return anim(el, [
+      { transform: 'none', opacity: 1 },
+      { transform: `translate(${cx - x}px, ${cy - y}px) scale(.4)`, opacity: 0 },
+    ], { duration, delay: i * stagger, easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'forwards' });
+  }));
+}
+
+async function flip(els, mutate, { duration = 600, stagger = 0, arc = 0, arcOnly = null } = {}) {
+  const first = els.map(e => e.getBoundingClientRect());
+  els.forEach(e => { e.style.transform = ''; e.classList.remove('dragging', 'selected'); });
+  mutate();
+  await Promise.all(els.map((e, i) => {
+    const l = e.getBoundingClientRect();
+    const dx = first[i].left - l.left, dy = first[i].top - l.top;
+    let kf;
+    if (arc && (!arcOnly || arcOnly === e)) {
+      kf = [];
+      for (let k = 0; k <= 20; k++) {
+        const t = k / 20;
+        kf.push({ transform: `translate(${dx * (1 - t)}px, ${dy * (1 - t) - arc * 4 * t * (1 - t)}px) rotate(${Math.sin(t * Math.PI) * -12}deg)` });
+      }
+    } else {
+      kf = [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0, 0)' }];
+    }
+    return anim(e, kf, {
+      duration, delay: i * stagger, fill: 'backwards',
+      easing: kf.length > 2 ? 'ease-in-out' : 'cubic-bezier(.22,.9,.25,1)',
+    });
+  }));
+}
+
+async function strike(cards) {
+  for (const c of cards) {
+    if (c.style.transform) {
+      const cur = c.style.transform;
+      c.style.transform = '';
+      anim(c, [{ transform: cur }, { transform: 'none' }], { duration: 250 });
+    }
+    c.append(h('span', { class: 'strike' }));
+  }
+  await sleep(50);
+  cards.forEach(c => c.classList.add('struck'));
+}
+
+const toastEl = document.getElementById('toast');
+let toastTimer;
+function toast(msg, type = 'info', ms = 2800) {
+  toastEl.textContent = msg;
+  toastEl.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toastEl.className = type; }, ms);
+}
+function fail(el, msg, ms) {
+  toast(msg, 'err', ms);
+  if (el.style.transform) setTimeout(() => shake(el), 340); else shake(el);
+}
+
+function draggable(el, { tap, drop, canDrag = () => true }) {
+  const findTarget = ev => {
+    for (const n of document.elementsFromPoint(ev.clientX, ev.clientY)) {
+      if (el.contains(n)) continue;
+      const d = n.closest('[data-drop]');
+      if (d && d !== el && !el.contains(d)) return d;
+    }
+    return null;
+  };
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY;
+    let dragging = false, hover = null;
+    const setHover = t => {
+      if (t === hover) return;
+      hover?.classList.remove('drop-hover');
+      hover = t;
+      hover?.classList.add('drop-hover');
+    };
+    const move = ev => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      if (!dragging) {
+        if (Math.hypot(dx, dy) < 8 || !canDrag()) return;
+        dragging = true;
+        el.classList.add('dragging');
+        el.classList.remove('selected');
+      }
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(1.08)`;
+      setHover(findTarget(ev));
+    };
+    const end = ev => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      setHover(null);
+      if (!dragging) { if (ev.type === 'pointerup') tap?.(); return; }
+      el.classList.remove('dragging');
+      const t = findTarget(ev);
+      if (t && drop?.(t)) return;
+      const cur = el.style.transform;
+      el.style.transform = '';
+      anim(el, [{ transform: cur }, { transform: 'none' }], { duration: 340, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  });
+}
+
+function primeCard(v) {
+  const len = String(v).length;
+  return h('div', {
+    class: `card prime ${COLORS[v] ? 'p' + v : 'pX'}${len === 2 ? ' mid' : len > 2 ? ' long' : ''}`, 'data-v': v,
+  }, v);
+}
+
+function stripes(f) {
+  const step = 100 / f.length, last = f.length - 1, parts = [];
+  f.forEach((p, i) => {
+    const s = i === 0 ? '0%' : `calc(${i * step}% + 2px)`;
+    const e = i === last ? '100%' : `calc(${(i + 1) * step}% - 2px)`;
+    parts.push(`${colorOf(p)} ${s} ${e}`);
+    if (i < last) parts.push(`#fff ${e} calc(${(i + 1) * step}% + 2px)`);
+  });
+  return `linear-gradient(90deg, ${parts.join(', ')})`;
+}
+const compW = (f, min = 1.6, per = .42) => Math.max(min, f.length * per);
+function compositeCard(n, factors, extra = '') {
+  const el = h('div', { class: `card composite ${extra}` }, h('span', { class: 'num' }, n));
+  el.style.background = stripes(factors);
+  el.style.width = `calc(var(--card) * ${compW(factors, extra === 'wide' ? 2.3 : 1.6, extra === 'wide' ? .48 : .42)})`;
+  return el;
+}
+const powCard = (exp, color, size = '') => h('div', { class: `card pcard ${color} ${size}`, html: `<span>a<sup>${exp}</sup></span>` });
+
+
+class Module {
+  constructor(id, title, goal) {
+    this.sec = document.getElementById(id);
+    this.goalEl = h('p', { html: goal });
+    this.stage = h('div', { class: 'stage' });
+    this.result = h('div', { class: 'result' });
+    this.ctrlMsg = h('div', { class: 'ctrl-msg' });
+    this.ctrl = h('div', { class: 'ctrl' }, this.ctrlMsg);
+    this.stepBtn = h('button', { class: 'btn btn-step', title: 'Клавиша → или PageDown', onclick: () => this.step() }, 'Следующий шаг ▶');
+    this.resetBtn = h('button', { class: 'btn btn-reset', title: 'Клавиша R', onclick: () => this.reset() }, '↺ Сбросить пример');
+    this.head = h('div', { class: 'mod-head' },
+      h('div', { class: 'mod-title' }, h('h1', {}, title), this.goalEl), this.stepBtn, this.resetBtn);
+    this.sec.append(this.head, this.ctrl, this.stage, this.result);
+    this.epoch = 0;
+    this.busy = false;
+  }
+  addCtrl(...els) { this.ctrlMsg.before(...els); }
+  addHead(...els) { this.stepBtn.before(...els); }
+  reset() {
+    this.epoch++;
+    this.busy = false;
+    this.stage.replaceChildren();
+    this.stage.style.removeProperty('--fit');
+    this.build();
+  }
+  alive(e) { return e === this.epoch; }
+  fit(units) {
+    this.stage.style.setProperty('--fit', `min(var(--base), calc((100vw - 160px) / ${units.toFixed(2)}))`);
+  }
+  setResult(html, cls = 'hint') {
+    this.result.innerHTML = `<span>${html}</span>`;
+    this.result.className = 'result ' + cls;
+  }
+  inputError(inputs, msg) {
+    for (const i of inputs) { i.classList.add('invalid'); shake(i); }
+    this.ctrlMsg.textContent = msg;
+    toast(msg, 'err', 4200);
+  }
+  clearError() {
+    this.ctrl.querySelectorAll('.invalid').forEach(i => i.classList.remove('invalid'));
+    this.ctrlMsg.textContent = '';
+  }
+  async lock(fn) {
+    if (this.busy) return;
+    this.busy = true;
+    const e = this.epoch;
+    try { await fn(e); } finally { if (this.alive(e)) this.busy = false; }
+  }
+}
+
+
+class GcdLcm extends Module {
+  constructor() {
+    super('m1', 'Конструктор чисел: НОД и НОК', 'Каждое число – набор «кирпичиков»: простых множителей своего цвета');
+    this.A = 12; this.B = 18; this.mode = 'gcd';
+    const fa = numField('Число A', '12', () => this.apply()), fb = numField('Число B', '18', () => this.apply());
+    this.inA = fa.input; this.inB = fb.input;
+    this.modeBtns = {
+      gcd: h('button', { onclick: () => this.setMode('gcd') }, 'Найти НОД'),
+      lcm: h('button', { onclick: () => this.setMode('lcm') }, 'Найти НОК'),
+    };
+    this.addCtrl(fa.el, fb.el,
+      h('button', { class: 'btn btn-go', onclick: () => this.apply() }, 'Построить карточки'),
+      chips([[12, 18], [24, 36], [30, 45], [8, 15]].map(([a, b]) => [`${a} и ${b}`, () => this.apply(a, b)])),
+      h('div', { class: 'seg' }, this.modeBtns.gcd, this.modeBtns.lcm));
+    this.reset();
+  }
+  apply(a, b) {
+    if (a != null) { this.inA.value = a; this.inB.value = b; }
+    this.clearError();
+    const ra = readInt(this.inA), rb = readInt(this.inB);
+    const bad = [[this.inA, ra], [this.inB, rb]].filter(([, r]) => r.bad || r.v < 2 || r.v > 500).map(([i]) => i);
+    if (bad.length) { this.inputError(bad, 'Введите целые числа от 2 до 500, чтобы карточки поместились на экране'); return; }
+    this.A = ra.v; this.B = rb.v;
+    this.reset();
+  }
+  setMode(m) { this.mode = m; this.reset(); }
+
+  build() {
+    for (const [k, b] of Object.entries(this.modeBtns)) b.classList.toggle('on', k === this.mode);
+    this.V = { A: this.A, B: this.B };
+    this.F = { A: getPrimeFactors(this.A), B: getPrimeFactors(this.B) };
+    this.done = false;
+    const inter = intersect(this.F.A, this.F.B), uni = union(this.F.A, this.F.B);
+    const rowU = id => compW(this.F[id]) + 1 + this.F[id].length * 1.42 + .6;
+    const zoneU = (this.mode === 'gcd' ? Math.max(inter.length, 1) : uni.length) * 1.42 + 1.5;
+    this.fit(Math.max(rowU('A'), rowU('B'), zoneU, 7));
+
+    this.rows = {};
+    this.zoneLabel = h('div', { class: 'zone-label' });
+    this.zoneChain = h('div', { class: 'chain' });
+    this.zone = h('div', { class: 'zone', 'data-drop': 'zone' }, this.zoneLabel, this.zoneChain);
+    this.stage.append(this.mkRow('A'), this.zone, this.mkRow('B'));
+    const { A, B } = this.V;
+
+    if (this.mode === 'gcd') {
+      if (!inter.length) {
+        this.done = true;
+        this.zoneLabel.textContent = 'Общих простых множителей нет';
+        this.setResult(`Числа взаимно простые: НОД(${A}, ${B}) = 1`, 'done');
+        return;
+      }
+      this.zoneLabel.textContent = 'Общие множители (НОД) – пересечение';
+      this.setResult('Кликните по карточке или перетащите её в зону – она найдёт пару того же цвета во втором числе');
+    } else {
+      this.L = A >= B ? 'A' : 'B';
+      this.S = this.L === 'A' ? 'B' : 'A';
+      const L = this.V[this.L], S = this.V[this.S];
+      this.zoneLabel.textContent = `НОК: весь набор большего числа ${L} + недостающие множители из ${S}`;
+      this.setResult(`Добавьте из числа ${S} только те карточки, которых не хватает в наборе`);
+      this.lock(async e => {
+        await sleep(450);
+        if (!this.alive(e)) return;
+        const cards = this.cardsIn(this.L);
+        await flip(cards, () => this.zoneChain.append(...cards), { stagger: 100 });
+        if (this.alive(e) && this.lcmComplete()) this.finishLcm();
+      });
+    }
+  }
+  mkRow(id) {
+    const chain = h('div', { class: 'chain' });
+    for (const v of this.F[id]) {
+      const c = primeCard(v);
+      c.dataset.row = id;
+      c.dataset.drop = 'card';
+      draggable(c, {
+        tap: () => this.act(c),
+        drop: t => this.onDrop(c, t),
+        canDrag: () => !this.busy && !!c.closest('.slot'),
+      });
+      chain.append(h('div', { class: 'slot' }, c));
+    }
+    this.rows[id] = chain;
+    const isPrime = this.F[id].length === 1;
+    return h('div', { class: 'nrow' },
+      h('div', { class: 'numbox' }, compositeCard(this.V[id], this.F[id]), isPrime ? h('div', { class: 'tag' }, 'простое число') : null),
+      h('div', { class: 'eq' }, '='), chain);
+  }
+  cardsIn(id) { return [...this.rows[id].querySelectorAll('.card')]; }
+  zoneCount(v) { return [...this.zoneChain.querySelectorAll('.card')].filter(c => +c.dataset.v === v).length; }
+
+  act(c, partner) {
+    if (this.busy || !c.closest('.slot')) return false;
+    return this.mode === 'gcd' ? this.pair(c, partner) : this.add(c);
+  }
+  onDrop(c, t) {
+    if (t === this.zone) return this.act(c);
+    if (t.dataset.drop === 'card' && t.dataset.row !== c.dataset.row && t.dataset.v === c.dataset.v && t.closest('.slot')) {
+      return this.act(c, this.mode === 'gcd' ? t : undefined);
+    }
+    return false;
+  }
+
+
+  pair(c, partner) {
+    const v = +c.dataset.v, other = c.dataset.row === 'A' ? 'B' : 'A';
+    partner = partner || this.cardsIn(other).find(x => +x.dataset.v === v);
+    if (!partner) {
+      fail(c, this.F[other].includes(v)
+        ? `Все множители ${v} числа ${this.V[other]} уже собраны в пары`
+        : 'Этого множителя нет во втором числе!');
+      return false;
+    }
+    const [a, b] = c.dataset.row === 'A' ? [c, partner] : [partner, c];
+    this.lock(async e => {
+      const p = h('div', { class: 'pair' });
+      await flip([a, b], () => { this.zoneChain.append(p); p.append(a, b); });
+      if (!this.alive(e)) return;
+      pulse(p);
+      const la = this.cardsIn('A'), lb = this.cardsIn('B');
+      if (!la.some(x => lb.some(y => y.dataset.v === x.dataset.v))) this.finishGcd([...la, ...lb]);
+    });
+    return true;
+  }
+  finishGcd(leftovers) {
+    this.done = true;
+    const vals = [...this.zoneChain.children].map(p => +p.firstChild.dataset.v);
+    const { A, B } = this.V;
+    this.setResult(`НОД(${A}, ${B}) = ${vals.map(col).join(' · ')}${vals.length > 1 ? ' = ' + prod(vals) : ''}`, 'done');
+    leftovers.forEach(c => c.classList.add('leftover'));
+    toast(leftovers.length ? `Оставшиеся карточки показывают, чем различаются числа ${A} и ${B}` : 'Все множители общие — числа равны', 'ok', 3800);
+  }
+
+  needS(v) { return count(this.F[this.S], v); }
+  lcmComplete() { return [...new Set(this.F[this.S])].every(v => this.zoneCount(v) >= this.needS(v)); }
+  enoughMsg(v, z) {
+    const what = NOUN[v] && z <= 4 ? `${COUNT[z]} ${z === 1 ? NOUN[v][0] : NOUN[v][2]}` : `Множитель ${v} (${z} шт.)`;
+    return `${what} уже есть! Больше не нужно.`;
+  }
+  add(c) {
+    if (c.dataset.row !== this.S) return false;
+    const v = +c.dataset.v, z = this.zoneCount(v);
+    if (z >= this.needS(v)) { fail(c, this.enoughMsg(v, z)); return false; }
+    this.lock(async e => {
+      c.classList.add('added');
+      await flip([c], () => this.zoneChain.append(c));
+      if (!this.alive(e)) return;
+      pulse(c);
+      if (this.lcmComplete()) this.finishLcm();
+    });
+    return true;
+  }
+  finishLcm() {
+    this.done = true;
+    const vals = [...this.zoneChain.children].map(x => +x.dataset.v);
+    const { A, B } = this.V, L = this.V[this.L], S = this.V[this.S];
+    this.setResult(`НОК(${A}, ${B}) = ${vals.map(col).join(' · ')}${vals.length > 1 ? ' = ' + prod(vals) : ''}`, 'done');
+    this.cardsIn(this.S).forEach(x => x.classList.add('faded'));
+    const added = vals.length - this.F[this.L].length;
+    toast(added ? `Остальные множители числа ${S} уже есть в наборе` : `Все множители числа ${S} уже есть в числе ${L}, поэтому НОК = ${L}`, 'ok', 3800);
+  }
+
+  step() {
+    if (this.busy) return;
+    if (this.done) { toast('Пример решён — введите новые числа или нажмите «Сбросить пример»'); return; }
+    if (this.mode === 'gcd') {
+      const c = this.cardsIn('A').find(x => this.cardsIn('B').some(y => y.dataset.v === x.dataset.v));
+      if (c) this.act(c);
+    } else {
+      const c = this.cardsIn(this.S).find(x => this.zoneCount(+x.dataset.v) < this.needS(+x.dataset.v));
+      if (c) this.act(c);
+    }
+  }
+}
+
+
+const BLOCK_COLORS = ['teal', 'indigo', 'orange', 'pink', 'sky'];
+class Powers extends Module {
+  constructor() {
+    super('m2', 'Свойства степеней: гармошка', '');
+    this.n = 3; this.m = 4; this.op = 'mul';
+    const fn = numField('n =', '3', () => this.apply()), fm = numField('m =', '4', () => this.apply());
+    this.inN = fn.input; this.inM = fm.input;
+    this.opBtns = {
+      mul: h('button', { html: 'Умножение <i>a</i><sup>n</sup> · <i>a</i><sup>m</sup>', onclick: () => this.apply('mul') }),
+      div: h('button', { html: 'Деление <i>a</i><sup>n</sup> : <i>a</i><sup>m</sup>', onclick: () => this.apply('div') }),
+      pow: h('button', { html: 'Степень в степень (<i>a</i><sup>n</sup>)<sup>m</sup>', onclick: () => this.apply('pow') }),
+    };
+    this.addCtrl(h('span', { class: 'chips-l' }, 'Показатели:'), fn.el, fm.el,
+      h('div', { class: 'seg' }, Object.values(this.opBtns)),
+      h('button', { class: 'btn btn-go', onclick: () => this.apply() }, 'Построить'));
+    this.actBtn = h('button', { class: 'btn btn-tool', onclick: () => this.action() });
+    this.addHead(this.actBtn);
+    this.reset();
+  }
+  apply(op = this.op) {
+    this.clearError();
+    const rn = readInt(this.inN), rm = readInt(this.inM), max = op === 'pow' ? 5 : 9;
+    const bad = [[this.inN, rn], [this.inM, rm]].filter(([, r]) => r.bad || r.v < 1 || r.v > max).map(([i]) => i);
+    if (bad.length) {
+      this.inputError(bad, op === 'pow'
+        ? 'Для возведения степени в степень возьмите n и m от 1 до 5 — иначе карточек будет больше 25'
+        : 'Показатели n и m — целые числа от 1 до 9');
+      return;
+    }
+    this.n = rn.v; this.m = rm.v; this.op = op;
+    this.reset();
+  }
+  setAct(label, enabled) { this.actBtn.textContent = label; this.actBtn.disabled = !enabled; }
+
+  build() {
+    for (const [k, b] of Object.entries(this.opBtns)) b.classList.toggle('on', k === this.op);
+    this.done = false;
+    this.formula = h('div', { class: 'formula' });
+    ({ mul: () => this.buildMul(), div: () => this.buildDiv(), pow: () => this.buildPow() })[this.op]();
+  }
+
+  mkGroup(n, color) {
+    const g = h('div', { class: `group ${color}-g`, 'data-drop': 'group' }, powCard(n, color, 'big'));
+    Object.assign(g, { _n: n, _color: color, _open: false });
+    draggable(g, {
+      tap: () => this.tapGroup(g),
+      drop: t => this.dropGroup(g, t),
+      canDrag: () => !this.busy && !this.done && g._open && this.op !== 'pow',
+    });
+    return g;
+  }
+  bothOpen() { return this.gA._open && this.gB._open; }
+  tapGroup(g) {
+    if (this.busy || this.done) return;
+    if (!g._open) { this.lock(e => this.expandGroup(g, e)); return; }
+    if (this.op === 'div' && this.bothOpen()) this.action();
+    else if (this.op === 'mul' && this.bothOpen()) toast('Перетащите одну цепочку на другую или нажмите «Соединить цепочки»');
+  }
+  dropGroup(g, t) {
+    if (t.dataset.drop !== 'group' || t === g) return false;
+    if (!this.bothOpen()) { toast('Сначала раскройте обе карточки', 'err'); return false; }
+    this.action();
+    return true;
+  }
+
+  async expandGroup(g, e) {
+    const from = center(g.firstChild.getBoundingClientRect());
+    const cards = Array.from({ length: g._n }, () => h('div', { class: `card pcard ${g._color}` }, 'a'));
+    const others = [...this.stage.querySelectorAll('.group, .mul, .fbar')].filter(x => x !== g);
+    const moving = flip(others, () => {
+      g.replaceChildren(h('div', { class: 'chain' }, cards), h('div', { class: 'cap', html: `${P(g._n)} = ${mn(g._n)}` }));
+      g.classList.add('open');
+    });
+    await Promise.all([moving, emerge(cards, from, { from: 'scaleX(.15) rotateY(80deg)', stagger: 70, duration: 600 })]);
+    if (!this.alive(e)) return;
+    g._open = true;
+    await this.afterExpand(e);
+  }
+  async afterExpand(e) {
+    if (this.op === 'mul' && this.bothOpen()) {
+      this.setAct('Соединить цепочки', true);
+      this.setResult('Перетащите одну цепочку на другую или нажмите «Соединить цепочки»');
+    } else if (this.op === 'div' && this.bothOpen()) {
+      this.setAct('Сократить пары', true);
+      this.setResult('Кликните по цепочке или нажмите «Сократить пары»: одинаковые множители сверху и снизу сократятся');
+    } else if (this.op === 'pow') {
+      if (this.blocks.every(b => b._open)) await this.finishPow(e);
+      else this.setResult(`Раскрыто блоков: ${this.blocks.filter(b => b._open).length} из ${this.m}`);
+    }
+  }
+
+  async numberCards(cards, e) {
+    const delay = Math.min(170, 2400 / cards.length);
+    for (let i = 0; i < cards.length; i++) {
+      if (!this.alive(e)) return false;
+      const b = h('span', { class: 'badge' }, i + 1);
+      cards[i].append(b);
+      pop(b);
+      await sleep(delay);
+    }
+    return this.alive(e);
+  }
+  action() {
+    if (this.busy || this.done) return;
+    if (this.op === 'mul') this.merge();
+    else if (this.op === 'div') this.cancelPairs();
+    else this.expandAll();
+  }
+
+  buildMul() {
+    const { n, m } = this;
+    this.goalEl.innerHTML = `Почему ${P('n')} · ${P('m')} = ${P('n+m')}: показатели складываются`;
+    this.gA = this.mkGroup(n, 'teal');
+    this.gB = this.mkGroup(m, 'indigo');
+    this.row = h('div', { class: 'pow-row' }, this.gA, h('div', { class: 'mul' }, '·'), this.gB);
+    this.formula.innerHTML = `${P(n)} · ${P(m)} = ?`;
+    this.stage.append(this.row, this.formula);
+    this.fit((n + m) * 1.42 + 4);
+    this.setAct('Соединить цепочки', false);
+    this.setResult('Кликните по карточке, чтобы раскрыть её «гармошкой»');
+  }
+  merge() {
+    if (!this.bothOpen()) { toast('Сначала раскройте обе карточки', 'err'); return; }
+    this.lock(async e => {
+      this.done = true;
+      this.setAct('Соединить цепочки', false);
+      const { n, m } = this;
+      const cards = [...this.gA.querySelectorAll('.card'), ...this.gB.querySelectorAll('.card')];
+      const chain = h('div', { class: 'chain' });
+      await flip(cards, () => { chain.append(...cards); this.row.replaceChildren(chain); }, { duration: 700 });
+      if (!await this.numberCards(cards, e)) return;
+      this.setResult(`<span style="color:var(--teal)">${mn(n)}</span> + <span style="color:var(--indigo)">${mn(m)}</span> = ${mn(n + m)}`);
+      await sleep(1300);
+      if (!this.alive(e)) return;
+      await implode(cards, center(chain.getBoundingClientRect()), { stagger: 30 });
+      if (!this.alive(e)) return;
+      const fin = powCard(n + m, 'grad', 'big');
+      this.row.replaceChildren(fin);
+      await pop(fin);
+      this.formula.innerHTML = `${P(n)} · ${P(m)} = ${P(`${n}+${m}`)} = ${P(n + m)}`;
+      this.setResult(`${mn(n)} + ${mn(m)} = ${mn(n + m)} (${P(n + m)}) — показатели складываются`, 'done');
+    });
+  }
+
+  buildDiv() {
+    const { n, m } = this;
+    this.goalEl.innerHTML = `Почему ${P('n')} : ${P('m')} = ${P('n−m')}: одинаковые множители сокращаются`;
+    this.gA = this.mkGroup(n, 'teal');
+    this.gB = this.mkGroup(m, 'indigo');
+    this.fbar = h('div', { class: 'fbar' });
+    this.row = h('div', { class: 'floors' }, this.gA, this.fbar, this.gB);
+    this.formula.innerHTML = `${frac(P(n), P(m))} = ?`;
+    this.stage.append(this.row, this.formula);
+    this.fit(Math.max(n, m) * 1.42 + 3);
+    this.setAct('Сократить пары', false);
+    this.setResult('Кликните по числителю и знаменателю, чтобы раскрыть их «гармошкой»');
+  }
+  cancelPairs() {
+    if (!this.bothOpen()) { toast('Сначала раскройте обе карточки', 'err'); return; }
+    this.lock(async e => {
+      this.done = true;
+      this.setAct('Сократить пары', false);
+      const { n, m } = this, k = Math.min(n, m);
+      const top = [...this.gA.querySelectorAll('.card')], bot = [...this.gB.querySelectorAll('.card')];
+      for (let i = 0; i < k; i++) {
+        strike([top[i], bot[i]]);
+        await sleep(Math.min(200, 1400 / k));
+        if (!this.alive(e)) return;
+      }
+      await sleep(500);
+      if (!this.alive(e)) return;
+      const gone = [...top.slice(0, k), ...bot.slice(0, k)];
+      await Promise.all([
+        ...top.slice(0, k).map(c => fadeOut(c, 'translateY(-70px) rotate(-12deg)')),
+        ...bot.slice(0, k).map(c => fadeOut(c, 'translateY(70px) rotate(12deg)')),
+      ]);
+      if (!this.alive(e)) return;
+      await flip([...top.slice(k), ...bot.slice(k)], () => gone.forEach(c => c.remove()));
+      if (!this.alive(e)) return;
+      this.setResult(`Сократили ${k} ${plural(k, ['пару', 'пары', 'пар'])} одинаковых множителей <i>a</i>`);
+      await sleep(800);
+      if (!this.alive(e)) return;
+      const collapse = async (g, cnt) => {
+        const cards = [...g.querySelectorAll('.card')];
+        if (cards.length) await implode(cards, center(g.getBoundingClientRect()), { stagger: 30 });
+        const card = cnt ? powCard(cnt, g._color, 'big') : h('div', { class: 'card pcard big one' }, '1');
+        g.replaceChildren(card);
+        g.classList.remove('open');
+        await pop(card);
+      };
+      await Promise.all([collapse(this.gA, n - k), collapse(this.gB, m - k)]);
+      if (!this.alive(e)) return;
+      if (m - k === 0) { // знаменатель стал 1 — дробь исчезает
+        await Promise.all([fadeOut(this.fbar), fadeOut(this.gB)]);
+        if (!this.alive(e)) return;
+        await flip([this.gA], () => { this.fbar.remove(); this.gB.remove(); });
+      }
+      const head = `${frac(P(n), P(m))} = `;
+      if (n > m) {
+        this.formula.innerHTML = head + `${P(`${n}−${m}`)} = ${P(n - m)}`;
+        this.setResult(`${mn(k)} сократились, сверху осталось ${mn(n - m)}: ${P(n - m)}`, 'done');
+      } else if (n === m) {
+        this.formula.innerHTML = head + '1';
+        this.setResult(`Все множители сократились: ${P(n)} : ${P(n)} = 1 (<i>a</i> ≠ 0)`, 'done');
+      } else {
+        this.formula.innerHTML = head + frac('1', P(`${m}−${n}`)) + ' = ' + frac('1', P(m - n));
+        this.setResult(`Сверху всё сократилось (осталась 1), снизу ${mn(m - n)}: ${frac('1', P(m - n))}`, 'done');
+      }
+    });
+  }
+
+  /* --- Степень в степень: (aⁿ)ᵐ = aⁿ·ᵐ --- */
+  buildPow() {
+    const { n, m } = this;
+    this.goalEl.innerHTML = `Почему (${P('n')})<sup>m</sup> = ${P('n·m')}: показатели перемножаются`;
+    this.blocks = null;
+    this.outer = h('div', { class: 'card pcard big wide-p grad', html: `<span>(a<sup>${n}</sup>)<sup>${m}</sup></span>` });
+    this.outer.addEventListener('click', () => this.explode());
+    this.row = h('div', { class: 'pow-row' }, this.outer);
+    this.formula.innerHTML = `(${P(n)})<sup>${m}</sup> = ?`;
+    this.stage.append(this.row, this.formula);
+    const perRow = Math.min(m, 3);
+    this.fit(perRow * (n * 1.42 + 1.4) + (perRow - 1) * 1 + 1);
+    this.setAct('Раскрыть все блоки', false);
+    this.setResult(`Кликните по карточке: внешняя степень ${m} покажет, сколько одинаковых блоков перемножается`);
+  }
+  explode() {
+    if (this.busy || this.blocks) return;
+    this.lock(async e => {
+      const { n, m } = this;
+      const from = center(this.outer.getBoundingClientRect());
+      this.blocks = Array.from({ length: m }, (_, j) => this.mkGroup(n, BLOCK_COLORS[j % BLOCK_COLORS.length]));
+      const rows = [];
+      for (let i = 0; i < m; i += 3) {
+        const r = h('div', { class: 'pow-row' });
+        this.blocks.slice(i, i + 3).forEach((g, j) => {
+          r.append(g);
+          if (i + j < m - 1) r.append(h('div', { class: 'mul' }, '·'));
+        });
+        rows.push(r);
+      }
+      this.wrap = h('div', { class: 'blocks' }, rows);
+      this.row.replaceWith(this.wrap);
+      await emerge(this.blocks, from, { stagger: 110 });
+      if (!this.alive(e)) return;
+      this.formula.innerHTML = `(${P(n)})<sup>${m}</sup> = ${Array(m).fill(P(n)).join(' · ')}`;
+      this.setAct('Раскрыть все блоки', true);
+      this.setResult(`${m} ${plural(m, ['одинаковый блок', 'одинаковых блока', 'одинаковых блоков'])} ${P(n)} — кликните по каждому, чтобы раскрыть`);
+    });
+  }
+  expandAll() {
+    if (!this.blocks) { this.explode(); return; }
+    this.lock(async e => {
+      for (const g of this.blocks) {
+        if (g._open) continue;
+        await this.expandGroup(g, e);
+        if (!this.alive(e)) return;
+      }
+    });
+  }
+  async finishPow(e) {
+    this.done = true;
+    this.setAct('Раскрыть все блоки', false);
+    const { n, m } = this;
+    const cards = [...this.wrap.querySelectorAll('.card')];
+    if (!await this.numberCards(cards, e)) return;
+    this.setResult(`${m} ${plural(m, ['группа', 'группы', 'групп'])} по ${mn(n)}: ${n} · ${m} = ${mn(n * m)}`);
+    await sleep(1400);
+    if (!this.alive(e)) return;
+    await implode(cards, center(this.wrap.getBoundingClientRect()), { stagger: 15 });
+    if (!this.alive(e)) return;
+    const fin = powCard(n * m, 'grad', 'big');
+    this.row = h('div', { class: 'pow-row' }, fin);
+    this.wrap.replaceWith(this.row);
+    await pop(fin);
+    this.formula.innerHTML = `(${P(n)})<sup>${m}</sup> = ${P(`${n}·${m}`)} = ${P(n * m)}`;
+    this.setResult(`${m} ${plural(m, ['группа', 'группы', 'групп'])} по ${mn(n)} = ${mn(n * m)} (${P(n * m)}) — показатели перемножаются`, 'done');
+  }
+
+  step() {
+    if (this.busy) return;
+    if (this.done) { toast('Пример решён — измените показатели или нажмите «Сбросить пример»'); return; }
+    if (this.op === 'pow') {
+      if (!this.blocks) return this.explode();
+      const g = this.blocks.find(b => !b._open);
+      if (g) this.lock(e => this.expandGroup(g, e));
+      return;
+    }
+    if (!this.gA._open) this.lock(e => this.expandGroup(this.gA, e));
+    else if (!this.gB._open) this.lock(e => this.expandGroup(this.gB, e));
+    else this.action();
+  }
+}
+
+
+class Root extends Module {
+  constructor() {
+    super('m3', 'Вынесение множителя из-под корня', 'Множители выходят из-под знака квадратного корня только парами');
+    this.N = 72;
+    const fN = numField('Число N =', '72', () => this.apply(null, true));
+    this.inN = fN.input;
+    this.addCtrl(fN.el,
+      h('button', { class: 'btn btn-go', onclick: () => this.apply(null, true) }, 'Разложить под корнем'),
+      chips([72, 48, 180, 200, 75, 144].map(v => [String(v), () => this.apply(v)])));
+    this.reset();
+  }
+  apply(v, auto = false) {
+    if (v != null) this.inN.value = v;
+    this.clearError();
+    const r = readInt(this.inN);
+    if (r.bad === 'neg') { this.inputError([this.inN], 'Квадратный корень из отрицательного числа не определён на множестве действительных чисел!'); return; }
+    if (r.bad || r.v < 2 || r.v > 1000) { this.inputError([this.inN], 'Введите целое число от 2 до 1000'); return; }
+    this.N = r.v;
+    this.reset();
+    if (auto) this.scatter();
+  }
+  build() {
+    const N = this.N, f = this.f = getPrimeFactors(N);
+    this.sel = null; this.scattered = false; this.done = false;
+    this.fit(3.4 + .8 + Math.max(compW(f, 2.3, .48), f.length * 1.42) + 1.5);
+    this.outChain = h('div', { class: 'chain' });
+    this.outside = h('div', { class: 'outside', 'data-drop': 'outside' }, h('div', { class: 'zone-label' }, 'Снаружи корня'), this.outChain);
+    this.inChain = h('div', { class: 'chain' });
+    this.body = h('div', { class: 'rad-body', 'data-drop': 'inside' }, this.inChain);
+    this.rad = h('div', { class: 'rad big' }, fromHTML(`<span class="rs-wrap">${RAD_SVG}</span>`), this.body);
+    this.cN = compositeCard(N, f, 'wide');
+    this.cN.addEventListener('click', () => this.scatter());
+    this.inChain.append(this.cN);
+    this.formula = h('div', { class: 'formula' });
+    this.stage.append(
+      h('div', { class: 'rule' }, 'Из-под квадратного корня множители могут выйти только парами!'),
+      h('div', { class: 'root-row' }, this.outside, this.rad),
+      this.formula);
+    this.updateFormula();
+    this.setResult(`Кликните по числу ${N}, чтобы разложить его на простые множители`);
+  }
+  inCards() { return [...this.inChain.querySelectorAll('.prime')]; }
+  partnerOf(c) { return this.inCards().find(x => x !== c && x.dataset.v === c.dataset.v); }
+  hasPairs() { return this.inCards().some(x => this.partnerOf(x)); }
+  clearSel() { this.sel?.classList.remove('selected'); this.sel = null; }
+  updateFormula() {
+    if (!this.scattered) { this.formula.innerHTML = `${radHTML(this.N)} = ?`; return; }
+    const out = [...this.outChain.querySelectorAll('.prime')].map(c => col(c.dataset.v));
+    const inn = this.inCards().map(c => col(c.dataset.v));
+    this.formula.innerHTML = `${radHTML(this.N)} = ${out.length ? out.join(' · ') + ' · ' : ''}${radHTML(inn.join(' · '))}`;
+  }
+
+  scatter() {
+    if (this.busy || this.scattered) return;
+    this.lock(async e => {
+      this.scattered = true;
+      const from = center(this.cN.getBoundingClientRect());
+      const cards = this.f.map(v => this.bindCard(primeCard(v)));
+      this.inChain.replaceChildren(...cards);
+      await emerge(cards, from);
+      if (!this.alive(e)) return;
+      this.updateFormula();
+      if (this.hasPairs()) {
+        this.setResult('Кликните две карточки одного цвета (или перетащите одну на другую) — пара выйдет из-под корня');
+        return;
+      }
+      this.done = true;
+      cards.forEach(c => c.classList.add('leftover'));
+      const msg = 'Пар одинаковых множителей нет — множитель из-под корня вынести нельзя!';
+      this.setResult(msg, 'warn');
+      toast(msg, 'info', 4000);
+    });
+  }
+  bindCard(c) {
+    c.dataset.drop = 'card';
+    draggable(c, {
+      tap: () => this.tapCard(c),
+      drop: t => this.onDrop(c, t),
+      canDrag: () => !this.busy && !this.done && this.inChain.contains(c),
+    });
+    return c;
+  }
+  loneMsg(c) {
+    const v = +c.dataset.v;
+    return NOUN[v] ? `У этой ${NOUN[v][1]} нет пары! Она остаётся под корнем` : `У множителя ${v} нет пары! Он остаётся под корнем`;
+  }
+  tapCard(c) {
+    if (this.busy || !this.inChain.contains(c)) return;
+    if (this.sel === c) { this.clearSel(); return; }
+    if (this.sel) {
+      if (this.sel.dataset.v === c.dataset.v) { const a = this.sel; this.sel = null; this.takePair(a, c); }
+      else { this.clearSel(); fail(c, 'Пару образуют только одинаковые множители — карточки одного цвета и числа'); }
+      return;
+    }
+    if (!this.partnerOf(c)) { fail(c, this.loneMsg(c)); return; }
+    c.classList.add('selected');
+    this.sel = c;
+  }
+  onDrop(c, t) {
+    if (this.busy) return false;
+    if (t.dataset.drop === 'card' && this.inChain.contains(t)) {
+      if (t.dataset.v !== c.dataset.v) { fail(c, 'Пару образуют только одинаковые множители — карточки одного цвета и числа'); return false; }
+      this.clearSel();
+      this.takePair(t, c);
+      return true;
+    }
+    if (t === this.outside) {
+      const p = this.partnerOf(c);
+      if (!p) { fail(c, this.loneMsg(c)); return false; }
+      this.clearSel();
+      this.takePair(p, c);
+      return true;
+    }
+    return false;
+  }
+
+  takePair(a, b) {
+    this.lock(async e => {
+      a.classList.remove('selected');
+      b.classList.remove('selected');
+      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      b.style.transform = '';
+      const rb0 = b.getBoundingClientRect();
+      a.classList.add('glow');
+      b.style.zIndex = 5;
+      await anim(b, [
+        { transform: `translate(${rb.left - rb0.left}px, ${rb.top - rb0.top}px)`, opacity: 1 },
+        { transform: `translate(${ra.left - rb0.left}px, ${ra.top - rb0.top}px)`, opacity: 1, offset: .8 },
+        { transform: `translate(${ra.left - rb0.left}px, ${ra.top - rb0.top}px) scale(.9)`, opacity: 0 },
+      ], { duration: 500, easing: 'ease-in', fill: 'forwards' });
+      if (!this.alive(e)) return;
+      await pulse(a);
+      if (!this.alive(e)) return;
+      a.classList.remove('glow');
+      const rest = this.inCards().filter(x => x !== a && x !== b);
+      await flip([a, ...rest], () => { b.remove(); this.outChain.append(a); }, { arc: 220, arcOnly: a, duration: 850 });
+      if (!this.alive(e)) return;
+      this.updateFormula();
+      if (this.hasPairs()) { this.setResult('Отлично! Найдите следующую пару'); return; }
+      this.inCards().forEach(x => x.classList.add('leftover'));
+      this.setResult('Пар больше нет — перемножаем множители снаружи корня…');
+      await sleep(1000);
+      if (this.alive(e)) await this.finalize(e);
+    });
+  }
+  async finalize(e) {
+    const outCards = [...this.outChain.children];
+    const outVals = outCards.map(c => +c.dataset.v), inVals = this.inCards().map(c => +c.dataset.v);
+    const k = prod(outVals), r = prod(inVals);
+    if (outCards.length >= 2) {
+      await implode(outCards, center(this.outChain.getBoundingClientRect()), { duration: 450 });
+      if (!this.alive(e)) return;
+      const card = compositeCard(k, outVals);
+      this.outChain.replaceChildren(card);
+      await pop(card);
+      if (!this.alive(e)) return;
+    }
+    if (!inVals.length) { 
+      await fadeOut(this.rad, 'scale(.85)');
+      if (!this.alive(e)) return;
+      await flip([this.outside], () => this.rad.remove());
+      if (!this.alive(e)) return;
+      toast('Под корнем ничего не осталось – корень извлекся нацело!', 'ok', 4200);
+    }
+    this.done = true;
+    const answer = inVals.length ? `${k}${radHTML(r)}` : `${k}`;
+    const outPart = outVals.map(col).join(' · ');
+    this.formula.innerHTML = `${radHTML(this.N)} = ${answer}`;
+    this.setResult(`${radHTML(this.N)} = ${radHTML(this.f.map(col).join(' · '))} = ${outPart}`
+      + (inVals.length ? ` · ${radHTML(inVals.map(col).join(' · '))}` : '') + ` = ${answer}`, 'done');
+    if (inVals.length) toast(`Готово! √${this.N} = ${k}√${r}`, 'ok');
+  }
+  step() {
+    if (this.busy) return;
+    if (!this.scattered) return this.scatter();
+    if (this.done) { toast('Пример решён — введите новое число или нажмите «Сбросить пример»'); return; }
+    this.clearSel();
+    const vals = [...new Set(this.inCards().map(c => +c.dataset.v))].sort((x, y) => y - x);
+    for (const v of vals) {
+      const same = this.inCards().filter(c => +c.dataset.v === v);
+      if (same.length >= 2) return this.takePair(same[0], same[1]);
+    }
+  }
+}
+
+
+const X = '<i>x</i>', Y = '<i>y</i>';
+const br = (a, s, b) => ({ html: `(${a} ${s} ${b})`, key: `${a}${s}${b}`, kind: s === '+' ? 'plus' : 'minus' });
+const mono = (tokens, factors, rule, formula) => ({ tokens: tokens.map(String), factors, rule, formula });
+const DIFF_SQ = ['Разность квадратов', '<i>a</i>² − <i>b</i>² = (<i>a</i> − <i>b</i>)(<i>a</i> + <i>b</i>)'];
+const FR = [
+  { name: '(x² − k²) / (x + k) – разность квадратов',
+    make: k => ({ num: mono([`${X}²`, '−', k * k], [br(X, '−', k), br(X, '+', k)], ...DIFF_SQ), den: [br(X, '+', k)], cond: `${X} ≠ −${k}` }) },
+  { name: '(x² − k²) / (x − k) – разность квадратов',
+    make: k => ({ num: mono([`${X}²`, '−', k * k], [br(X, '−', k), br(X, '+', k)], ...DIFF_SQ), den: [br(X, '−', k)], cond: `${X} ≠ ${k}` }) },
+  { name: '(x² + 2kx + k²) / (x + k) – квадрат суммы',
+    make: k => ({ num: mono([`${X}²`, '+', `${2 * k}${X}`, '+', k * k], [br(X, '+', k), br(X, '+', k)],
+      'Квадрат суммы', '<i>a</i>² + 2<i>ab</i> + <i>b</i>² = (<i>a</i> + <i>b</i>)(<i>a</i> + <i>b</i>)'), den: [br(X, '+', k)], cond: `${X} ≠ −${k}` }) },
+  { name: '(x² − 2kx + k²) / (x − k) – квадрат разности',
+    make: k => ({ num: mono([`${X}²`, '−', `${2 * k}${X}`, '+', k * k], [br(X, '−', k), br(X, '−', k)],
+      'Квадрат разности', '<i>a</i>² − 2<i>ab</i> + <i>b</i>² = (<i>a</i> − <i>b</i>)(<i>a</i> − <i>b</i>)'), den: [br(X, '−', k)], cond: `${X} ≠ ${k}` }) },
+  { name: '(kx − ky) / (x² − y²) – общий множитель + ФСУ',
+    make: k => ({
+      num: k > 1
+        ? mono([`${k}${X}`, '−', `${k}${Y}`], [{ html: String(k), key: 'k' + k, kind: 'kcoef' }, br(X, '−', Y)],
+          'Вынесение общего множителя', '<i>ka</i> − <i>kb</i> = <i>k</i>(<i>a</i> − <i>b</i>)')
+        : [br(X, '−', Y)],
+      den: mono([`${X}²`, '−', `${Y}²`], [br(X, '−', Y), br(X, '+', Y)], ...DIFF_SQ),
+      cond: `${X} ≠ ±${Y}`,
+    }) },
+];
+
+const factorsText = list => list.length === 1 ? list[0].html.replace(/^\((.*)\)$/, '$1') : list.map(f => f.html).join('');
+
+class Fraction extends Module {
+  constructor() {
+    super('m4', 'Монолит сложения: алгебраические дроби', '');
+    this.t = 0; this.k = 3;
+    this.selT = h('select', { class: 'inp sel' }, FR.map((T, i) => h('option', { value: i }, `${i + 1}) ${T.name}`)));
+    this.selT.addEventListener('change', () => this.apply());
+    const fk = numField('k =', '3', () => this.apply());
+    this.inK = fk.input;
+    this.addCtrl(h('label', { class: 'fld' }, 'Пример:', this.selT), fk.el,
+      h('button', { class: 'btn btn-go', onclick: () => this.apply() }, 'Построить'));
+    this.reset();
+  }
+  apply() {
+    this.clearError();
+    const r = readInt(this.inK);
+    if (r.bad || r.v < 1 || r.v > 9) { this.inputError([this.inK], 'Число k — целое от 1 до 9'); return; }
+    this.t = +this.selT.value; this.k = r.v;
+    this.reset();
+  }
+  build() {
+    const T = this.T = FR[this.t].make(this.k);
+    this.done = false;
+    this.floors = {};
+    this.tools = h('div', { class: 'tools' });
+    for (const side of ['num', 'den']) {
+      const spec = T[side], box = h('div', { class: 'fl-' + side });
+      const f = { side, box, spec, mono: null, chain: null, btn: null };
+      if (Array.isArray(spec)) {
+        f.chain = this.mkChain(spec, side);
+        box.append(f.chain);
+      } else {
+        f.mono = this.mkMono(f);
+        box.append(f.mono);
+        f.btn = h('button', { class: 'btn btn-tool', onclick: () => this.factor(side) }, side === 'num' ? 'Разложить числитель' : 'Разложить знаменатель');
+        this.tools.append(h('div', { class: 'tool' }, h('div', { class: 'cap' }, spec.rule), h('div', { class: 'fsu', html: spec.formula }), f.btn));
+      }
+      this.floors[side] = f;
+    }
+    this.bar = h('div', { class: 'bar' });
+    this.answer = h('div', { class: 'formula' });
+    this.stage.append(
+      h('div', { class: 'frac-row' }, h('div', { class: 'frac' }, this.floors.num.box, this.bar, this.floors.den.box), this.tools),
+      this.answer);
+    this.fit(13);
+    const text = s => Array.isArray(s) ? factorsText(s) : s.tokens.join(' ');
+    const full = s => factorsText(Array.isArray(s) ? s : s.factors);
+    this.origHTML = frac(text(T.num), text(T.den));
+    this.factoredHTML = frac(full(T.num), full(T.den));
+    this.goalEl.innerHTML = `Сократите дробь ${this.origHTML}`;
+    this.setResult('Попробуйте сократить слагаемые по отдельности – или сначала разложите на множители');
+  }
+  mkMono(f) {
+    const expr = f.spec.tokens.map(t => t === '+' || t === '−' ? `<span class="op">${t}</span>` : `<span class="term">${t}</span>`).join('');
+    const el = h('div', { class: 'mono' },
+      h('div', { class: 'mono-expr', html: expr }),
+      h('div', { class: 'weld', html: `${LOCK_SVG}<span>единое выражение</span>` }));
+    el.addEventListener('click', () => this.monoError(f));
+    return el;
+  }
+  mkChain(factors, side) {
+    return h('div', { class: 'chain' }, factors.map(fc => {
+      const c = h('div', { class: `card bcard ${fc.kind}`, 'data-drop': 'card', html: `<span>${fc.html}</span>` });
+      c._f = fc;
+      c.dataset.key = fc.key;
+      c.dataset.side = side;
+      draggable(c, {
+        tap: () => this.tapFactor(c),
+        drop: t => this.dropFactor(c, t),
+        canDrag: () => !this.busy && !this.done,
+      });
+      return c;
+    }));
+  }
+  other(side) { return side === 'num' ? 'den' : 'num'; }
+  sideName(side, form) { return side === 'num' ? ['числитель', 'числителе'][form] : ['знаменатель', 'знаменателе'][form]; }
+  cardsOf(side) { const f = this.floors[side]; return f.chain ? [...f.chain.children] : []; }
+  hasPairs() { const d = this.cardsOf('den').map(c => c.dataset.key); return this.cardsOf('num').some(c => d.includes(c.dataset.key)); }
+
+  monoError(f) {
+    if (this.busy || this.done || !f.mono) return;
+    const e = this.epoch;
+    f.mono.classList.add('error');
+    shake(f.mono);
+    toast('Нельзя сокращать слагаемые! Сначала разложите на множители — знаки + и − связывают выражение в единый монолит', 'err', 4500);
+    f.btn.classList.remove('attn');
+    void f.btn.offsetWidth;
+    f.btn.classList.add('attn');
+    setTimeout(() => { if (this.alive(e)) f.mono?.classList.remove('error'); }, 1600);
+  }
+  tapFactor(c) {
+    if (this.busy || this.done) return;
+    const side = c.dataset.side, other = this.other(side);
+    if (this.floors[other].mono) { fail(c, `Сначала разложите на множители ${this.sideName(other, 0)}`); return; }
+    const match = this.cardsOf(other).find(x => x.dataset.key === c.dataset.key);
+    if (!match) { fail(c, `Такого множителя нет в ${this.sideName(other, 1)} — сокращать не с чем`); return; }
+    side === 'num' ? this.cancelPair(c, match) : this.cancelPair(match, c);
+  }
+  dropFactor(c, t) {
+    if (this.busy || t.dataset.drop !== 'card' || t === c || t.dataset.side === c.dataset.side) return false;
+    if (t.dataset.key !== c.dataset.key) { fail(c, 'Сокращать можно только одинаковые множители'); return false; }
+    c.dataset.side === 'num' ? this.cancelPair(c, t) : this.cancelPair(t, c);
+    return true;
+  }
+
+  factor(side) {
+    const f = this.floors[side];
+    if (this.busy || !f.mono) return;
+    this.lock(async e => {
+      f.btn.disabled = true;
+      const mono = f.mono;
+      mono.classList.remove('error');
+      const crack = fromHTML('<svg class="crack" viewBox="0 0 100 100" preserveAspectRatio="none"><path pathLength="100" vector-effect="non-scaling-stroke" d="M52 0 L46 18 L56 34 L44 52 L57 68 L47 84 L53 100"/></svg>');
+      mono.append(crack);
+      await anim(crack.firstChild, [{ strokeDashoffset: 100 }, { strokeDashoffset: 0 }], { duration: 450, fill: 'forwards' });
+      if (!this.alive(e)) return;
+      await anim(mono, [{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 220 });
+      if (!this.alive(e)) return;
+      const r = mono.getBoundingClientRect();
+      const halves = [
+        'polygon(0 0, 52% 0, 46% 18%, 56% 34%, 44% 52%, 57% 68%, 47% 84%, 53% 100%, 0 100%)',
+        'polygon(52% 0, 100% 0, 100% 100%, 53% 100%, 47% 84%, 57% 68%, 44% 52%, 56% 34%, 46% 18%)',
+      ].map(cp => {
+        const c = mono.cloneNode(true);
+        Object.assign(c.style, {
+          position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px',
+          margin: 0, clipPath: cp, zIndex: 60, pointerEvents: 'none',
+        });
+        this.stage.append(c);
+        return c;
+      });
+      f.mono = null;
+      f.chain = this.mkChain(f.spec.factors, side);
+      f.box.replaceChildren(f.chain);
+      await Promise.all([
+        fadeOut(halves[0], 'translate(-140px, 60px) rotate(-16deg)'),
+        fadeOut(halves[1], 'translate(140px, 60px) rotate(16deg)'),
+        emerge([...f.chain.children], center(r), { stagger: 120, duration: 650 }),
+      ]);
+      halves.forEach(x => x.remove());
+      if (!this.alive(e)) return;
+      const other = this.other(side);
+      if (this.floors[other].mono) this.setResult(`Теперь разложите на множители ${this.sideName(other, 0)}`);
+      else this.setResult('Найдите одинаковые множители сверху и снизу — кликните по одному из них или перетащите одну скобку на другую');
+    });
+  }
+
+  cancelPair(a, b) {
+    this.lock(async e => {
+      await strike([a, b]);
+      await sleep(650);
+      if (!this.alive(e)) return;
+      await Promise.all([
+        anim(a, [{ transform: 'none', opacity: 1 }, { transform: 'translate(55vw, -70vh) rotate(35deg)', opacity: 0 }], { duration: 800, easing: 'cubic-bezier(.5,0,.9,.5)', fill: 'forwards' }),
+        anim(b, [{ transform: 'none', opacity: 1 }, { transform: 'translate(55vw, 70vh) rotate(-35deg)', opacity: 0 }], { duration: 800, easing: 'cubic-bezier(.5,0,.9,.5)', fill: 'forwards' }),
+      ]);
+      if (!this.alive(e)) return;
+      const rest = [...this.cardsOf('num'), ...this.cardsOf('den')].filter(x => x !== a && x !== b);
+      await flip(rest, () => { a.remove(); b.remove(); });
+      if (!this.alive(e)) return;
+      if (this.hasPairs()) { this.setResult('Есть ещё одинаковые множители — сократите и их'); return; }
+      await this.finish(e);
+    });
+  }
+  async finish(e) {
+    const num = this.floors.num, den = this.floors.den;
+    const numF = this.cardsOf('num').map(c => c._f), denF = this.cardsOf('den').map(c => c._f);
+    if (!numF.length) {
+      const one = h('div', { class: 'card bcard kcoef' }, '1');
+      num.chain.append(one);
+      await pop(one);
+    }
+    if (!denF.length) { 
+      await Promise.all([fadeOut(this.bar), fadeOut(den.box)]);
+      if (!this.alive(e)) return;
+      await flip([num.box], () => { this.bar.remove(); den.box.remove(); });
+      if (!this.alive(e)) return;
+    }
+    this.done = true;
+    const numT = numF.length ? factorsText(numF) : '1';
+    const ans = denF.length ? frac(numT, factorsText(denF)) : numT;
+    this.answer.innerHTML = `${this.origHTML}&nbsp;= ${ans}`;
+    pop(this.answer);
+    this.setResult(`${this.origHTML} = ${this.factoredHTML} = ${ans} &nbsp;<span class="cond">(при ${this.T.cond})</span>`, 'done');
+    toast('Сокращаются только одинаковые МНОЖИТЕЛИ!', 'ok');
+  }
+  step() {
+    if (this.busy) return;
+    if (this.done) { toast('Пример решён — выберите другой пример или нажмите «Сбросить пример»'); return; }
+    const monoSide = ['num', 'den'].find(s => this.floors[s].mono);
+    if (monoSide) return this.factor(monoSide);
+    const d = this.cardsOf('den');
+    for (const c of this.cardsOf('num')) {
+      const m = d.find(x => x.dataset.key === c.dataset.key);
+      if (m) return this.cancelPair(c, m);
+    }
+  }
+}
+
+
+const TABS = [
+  ['5–6 класс', 'НОД и НОК'],
+  ['7–9 класс', 'Свойства степеней'],
+  ['8 класс', 'Вынесение из-под корня'],
+  ['7–9 класс', 'Дроби и ФСУ'],
+];
+const modules = [new GcdLcm(), new Powers(), new Root(), new Fraction()];
+const tabsEl = document.getElementById('tabs');
+const tabBtns = TABS.map(([cls, name], i) =>
+  h('button', { class: 'tab', onclick: () => activate(i) }, h('small', {}, cls), h('b', {}, name)));
+tabsEl.append(...tabBtns);
+let current = 0;
+function activate(i) {
+  current = i;
+  tabBtns.forEach((b, k) => b.classList.toggle('active', k === i));
+  modules.forEach((m, k) => m.sec.classList.toggle('active', k === i));
+}
+activate(0);
+
+document.addEventListener('click', e => e.target.closest('button')?.blur());
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.altKey || e.metaKey || e.target.closest('input, select, textarea')) return;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); modules[current].step(); }
+  else if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') modules[current].reset();
+  else if (e.key >= '1' && e.key <= '4') activate(+e.key - 1);
+});
+</script>
+</body>
+</html>
