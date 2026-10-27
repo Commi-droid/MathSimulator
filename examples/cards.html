@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Печать дидактических карточек (А4)</title>
+<style>
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body {
+    margin: 0;
+    padding: 20px;
+    background: #e2e8f0;
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  .no-print {
+    max-width: 210mm;
+    margin: 0 auto 20px auto;
+    background: #1e293b;
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .no-print button {
+    background: #10b981;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .no-print button:hover {
+    background: #059669;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 20px auto;
+    background: #ffffff;
+    padding: 12mm;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    page-break-after: always;
+  }
+  h2.sheet-title {
+    margin: 0 0 4mm 0;
+    font-size: 14pt;
+    color: #334155;
+    border-bottom: 2px solid #cbd5e1;
+    padding-bottom: 2mm;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .grid-composite {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6mm;
+    margin-bottom: 8mm;
+  }
+  /* Карточка составного числа */
+  .card-composite {
+    height: 52mm;
+    border: 3px solid #0f172a;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stripes {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+  .stripe {
+    flex: 1;
+    height: 100%;
+    border-right: 3px solid #0f172a;
+  }
+  .stripe:last-child {
+    border-right: none;
+  }
+
+  /* Цвета простых множителей */
+  .c-red { background: #ef4444; }
+  .c-blue { background: #2563eb; }
+  .c-yellow { background: #f59e0b; }
+  .c-green { background: #10b981; }
+  /* Яркий сочный пурпурно-фиолетовый, контрастный к синему */
+  .c-purple { background: linear-gradient(135deg, #c026d3 0%, #9333ea 100%); }
+
+  .composite-badge {
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.96);
+    border: 4px solid #0f172a;
+    border-radius: 16px;
+    padding: 5mm 11mm;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  }
+  .composite-num {
+    font-size: 46pt;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+  }
+
+  /* Карточки НОД и НОК */
+/* Карточки НОД и НОК */
+  .grid-algo {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6mm;
+  }
+  .card-algo {
+    height: 44mm;
+    border: 3px solid #0f172a;
+    border-radius: 14px;
+    padding: 5mm;
+    display: flex;
+    flex-direction: column; /* Ставит расшифровку строго ПОД заголовок */
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .algo-nod {
+    background: #eff6ff;
+    border-color: #1d4ed8;
+  }
+  .algo-nok {
+    background: #ecfdf5;
+    border-color: #047857;
+  }
+  .algo-title {
+    font-size: 44pt;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+  .algo-sub {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 2.5mm; /* Отступ сверху от букв НОД / НОК */
+  }
+
+  /* Сетка простых карточек (Лист 2) */
+  .grid-primes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4.5mm;
+  }
+  .card-prime {
+    height: 38mm;
+    border: 3px solid #0f172a;
+    border-radius: 12px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+  }
+  .card-prime.c-yellow {
+    color: #0f172a;
+  }
+  .prime-num {
+    font-size: 44pt;
+    font-weight: 900;
+    line-height: 1;
+  }
+  /* Точки умножения на стыках */
+  .dot-left, .dot-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 7mm;
+    height: 7mm;
+    background: #ffffff;
+    color: #0f172a;
+    border: 2px solid #0f172a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16pt;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .dot-left { left: 1.5mm; }
+  .dot-right { right: 1.5mm; }
+
+  /* Белое окошко под маркер на фиолетовой карточке */
+  .marker-box {
+    width: 24mm;
+    height: 24mm;
+    background: #ffffff;
+    border: 3px solid #0f172a;
+    border-radius: 8px;
+  }
+
+  @media print {
+    body { background: none; padding: 0; }
+    .no-print { display: none !important; }
+    .page { margin: 0; box-shadow: none; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+
+<!-- ЛИСТ 1: СОСТАВНЫЕ ЧИСЛА + ПЛАШКИ НОД И НОК -->
+<div class="page">
+
+  
+  <div class="grid-composite">
+    <!-- Пара 1: 12 и 18 -->
+    <div class="card-composite">
+      <div class="stripes">
+        <div class="stripe c-red"></div>
+        <div class="stripe c-red"></div>
+        <div class="stripe c-blue"></div>
+      </div>
+      <div class="composite-badge">
+        <div class="composite-num">12</div>
+      </div>
+    </div>
+
+    <div class="card-composite">
+      <div class="stripes">
+        <div class="stripe c-red"></div>
+        <div class="stripe c-blue"></div>
+        <div class="stripe c-blue"></div>
+      </div>
+      <div class="composite-badge">
+        <div class="composite-num">18</div>
+      </div>
+    </div>
+
+    <!-- Пара 2: 30 и 70 -->
+    <div class="card-composite">
+      <div class="stripes">
+        <div class="stripe c-red"></div>
+        <div class="stripe c-blue"></div>
+        <div class="stripe c-yellow"></div>
+      </div>
+      <div class="composite-badge">
+        <div class="composite-num">30</div>
+      </div>
+    </div>
+
+    <div class="card-composite">
+      <div class="stripes">
+        <div class="stripe c-red"></div>
+        <div class="stripe c-yellow"></div>
+        <div class="stripe c-green"></div>
+      </div>
+      <div class="composite-badge">
+        <div class="composite-num">70</div>
+      </div>
+    </div>
+
+    <!-- Пара 3: 22 и 33 -->
+    <div class="card-composite">
+      <div class="stripes">
+        <div class="stripe c-red"></div>
+        <div class="stripe c-purple"></div>
+      </div>
+      <div class="composite-badge">
+        <div class="composite-num">22</div>
+      </div>
+    </div>
+
+    <div class="card-composite">
+      <div class="stripes">
+        <div class="stripe c-blue"></div>
+        <div class="stripe c-purple"></div>
+      </div>
+      <div class="composite-badge">
+        <div class="composite-num">33</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-algo">
+    <div class="card-algo algo-nod">
+      <div class="algo-title">НОД</div>
+      <div class="algo-sub">Наибольший общий делитель</div>
+    </div>
+    <div class="card-algo algo-nok">
+      <div class="algo-title">НОК</div>
+      <div class="algo-sub">Наименьшее общее кратное</div>
+    </div>
+  </div>
+</div>
+
+<!-- ЛИСТ 2: КАРТОЧКИ ПРОСТЫХ МНОЖИТЕЛЕЙ (24 ШТ) -->
+<div class="page">
+  
+  <div class="grid-primes">
+    <!-- 6 Красных двоек -->
+    <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
+
+    <!-- 6 Синих троек -->
+    <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
+
+    <!-- 3 Желтые пятерки -->
+    <div class="card-prime c-yellow"><span class="dot-left">·</span><span class="prime-num">5</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-yellow"><span class="dot-left">·</span><span class="prime-num">5</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-yellow"><span class="dot-left">·</span><span class="prime-num">5</span><span class="dot-right">·</span></div>
+
+    <!-- 3 Зеленые семерки -->
+    <div class="card-prime c-green"><span class="dot-left">·</span><span class="prime-num">7</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-green"><span class="dot-left">·</span><span class="prime-num">7</span><span class="dot-right">·</span></div>
+    <div class="card-prime c-green"><span class="dot-left">·</span><span class="prime-num">7</span><span class="dot-right">·</span></div>
+
+    <!-- 6 Фиолетовых карточек с пустым белым полем под маркер -->
+    <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
+    <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
+    <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
+    <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
+    <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
+    <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
+  </div>
+</div>
+
+</body>
+</html>
