@@ -2,7 +2,6 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Печать дидактических карточек (А4)</title>
 <style>
   * {
     box-sizing: border-box;
@@ -64,7 +63,6 @@
     gap: 6mm;
     margin-bottom: 8mm;
   }
-  /* Карточка составного числа */
   .card-composite {
     height: 52mm;
     border: 3px solid #0f172a;
@@ -91,12 +89,10 @@
     border-right: none;
   }
 
-  /* Цвета простых множителей */
   .c-red { background: #ef4444; }
   .c-blue { background: #2563eb; }
   .c-yellow { background: #f59e0b; }
   .c-green { background: #10b981; }
-  /* Яркий сочный пурпурно-фиолетовый, контрастный к синему */
   .c-purple { background: linear-gradient(135deg, #c026d3 0%, #9333ea 100%); }
 
   .composite-badge {
@@ -116,8 +112,6 @@
     line-height: 1;
   }
 
-  /* Карточки НОД и НОК */
-/* Карточки НОД и НОК */
   .grid-algo {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -129,7 +123,7 @@
     border-radius: 14px;
     padding: 5mm;
     display: flex;
-    flex-direction: column; /* Ставит расшифровку строго ПОД заголовок */
+    flex-direction: column; 
     justify-content: center;
     align-items: center;
     text-align: center;
@@ -153,10 +147,9 @@
     font-size: 12pt;
     font-weight: 700;
     color: #1e293b;
-    margin-top: 2.5mm; /* Отступ сверху от букв НОД / НОК */
+    margin-top: 2.5mm; 
   }
 
-  /* Сетка простых карточек (Лист 2) */
   .grid-primes {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -180,7 +173,7 @@
     font-weight: 900;
     line-height: 1;
   }
-  /* Точки умножения на стыках */
+
   .dot-left, .dot-right {
     position: absolute;
     top: 50%;
@@ -201,7 +194,6 @@
   .dot-left { left: 1.5mm; }
   .dot-right { right: 1.5mm; }
 
-  /* Белое окошко под маркер на фиолетовой карточке */
   .marker-box {
     width: 24mm;
     height: 24mm;
@@ -220,12 +212,10 @@
 <body>
 
 
-<!-- ЛИСТ 1: СОСТАВНЫЕ ЧИСЛА + ПЛАШКИ НОД И НОК -->
 <div class="page">
 
   
   <div class="grid-composite">
-    <!-- Пара 1: 12 и 18 -->
     <div class="card-composite">
       <div class="stripes">
         <div class="stripe c-red"></div>
@@ -248,7 +238,6 @@
       </div>
     </div>
 
-    <!-- Пара 2: 30 и 70 -->
     <div class="card-composite">
       <div class="stripes">
         <div class="stripe c-red"></div>
@@ -271,7 +260,6 @@
       </div>
     </div>
 
-    <!-- Пара 3: 22 и 33 -->
     <div class="card-composite">
       <div class="stripes">
         <div class="stripe c-red"></div>
@@ -305,11 +293,9 @@
   </div>
 </div>
 
-<!-- ЛИСТ 2: КАРТОЧКИ ПРОСТЫХ МНОЖИТЕЛЕЙ (24 ШТ) -->
 <div class="page">
   
   <div class="grid-primes">
-    <!-- 6 Красных двоек -->
     <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
     <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
     <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
@@ -317,7 +303,6 @@
     <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
     <div class="card-prime c-red"><span class="dot-left">·</span><span class="prime-num">2</span><span class="dot-right">·</span></div>
 
-    <!-- 6 Синих троек -->
     <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
     <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
     <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
@@ -325,17 +310,14 @@
     <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
     <div class="card-prime c-blue"><span class="dot-left">·</span><span class="prime-num">3</span><span class="dot-right">·</span></div>
 
-    <!-- 3 Желтые пятерки -->
     <div class="card-prime c-yellow"><span class="dot-left">·</span><span class="prime-num">5</span><span class="dot-right">·</span></div>
     <div class="card-prime c-yellow"><span class="dot-left">·</span><span class="prime-num">5</span><span class="dot-right">·</span></div>
     <div class="card-prime c-yellow"><span class="dot-left">·</span><span class="prime-num">5</span><span class="dot-right">·</span></div>
 
-    <!-- 3 Зеленые семерки -->
     <div class="card-prime c-green"><span class="dot-left">·</span><span class="prime-num">7</span><span class="dot-right">·</span></div>
     <div class="card-prime c-green"><span class="dot-left">·</span><span class="prime-num">7</span><span class="dot-right">·</span></div>
     <div class="card-prime c-green"><span class="dot-left">·</span><span class="prime-num">7</span><span class="dot-right">·</span></div>
 
-    <!-- 6 Фиолетовых карточек с пустым белым полем под маркер -->
     <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
     <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
     <div class="card-prime c-purple"><span class="dot-left">·</span><div class="marker-box"></div><span class="dot-right">·</span></div>
